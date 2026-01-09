@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crispy Chicken Recipe Management System (Full DB)</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #ff9f1c;
+            --primary-dark: #e0890b;
+            --secondary-color: #2ec4b6;
+            --bg-color: #f4f6f9;
+            --sidebar-width: 260px;
+            --text-color: #2c3e50;
+            --text-light: #7f8c8d;
+            --white: #ffffff;
+            --border-radius: 8px;
+            --shadow: 0 2px 10px rgba(0,0,0,0.05);
+            --danger: #ff4757;
+            --success: #2ed573;
+            --purple: #a55eea;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #eee;
+            position: fixed;
+            height: 100vh;
+            left: 0; 
+            z-index: 100;
+            top: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        .nav-links { list-style: none; flex: 1; }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-light);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: #fff3e0;
+            color: var(--primary-color);
+        }
+        .nav-item i { width: 20px; text-align: center; }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        h1 { font-size: 1.6rem; font-weight: 700; color: var(--text-color); }
+
+        /* Buttons & Inputs */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        .btn-primary { background-color: var(--primary-color); color: var(--white); }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .btn-secondary { background-color: var(--secondary-color); color: var(--white); }
+        .btn-purple { background-color: var(--purple); color: var(--white); }
+        .btn-danger { background-color: var(--danger); color: var(--white); }
+        .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+        .btn-outline { background-color: transparent; border: 1px solid #ddd; color: var(--text-color); }
+
+        /* Cards */
+        .card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        /* Tables */
+        .table-container { overflow-x: auto; border-radius: var(--border-radius); border: 1px solid #eee; }
+        
+        table { width: 100%; border-collapse: collapse; background: var(--white); }
+        th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+            border-bottom: 2px solid #eee;
+            white-space: nowrap;
+        }
+        td { padding: 10px 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; vertical-align: middle;}
+        tr:hover { background-color: #fafafa; }
+
+        .profit-pos { color: var(--success); font-weight: bold; }
+        .profit-neg { color: var(--danger); font-weight: bold; }
+
+        /* Cost Input in Table */
+        input.cost-input {
+            width: 80px;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: right;
+            font-weight: bold;
+            color: var(--primary-color);
+            background: #fff9f0;
+        }
+        input.cost-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            background: #fff;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-info h3 { font-size: 1.8rem; margin-bottom: 5px; color: var(--text-color); }
+        .stat-info p { color: var(--text-light); font-size: 0.9rem; font-weight: 500; }
+        .stat-icon { font-size: 1.8rem; opacity: 0.2; }
+
+        /* Builder Section in Modal */
+        .builder-section {
+            border: 1px solid #eee; background: #fcfcfc;
+            padding: 15px; border-radius: 8px; margin-bottom: 15px;
+        }
+        .builder-title { font-size: 0.85rem; font-weight: 700; color: var(--text-light); margin-bottom: 10px; text-transform: uppercase; display: flex; justify-content: space-between; }
+        .ing-row { display: grid; grid-template-columns: 3fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: center; }
+        
+        .cost-summary {
+            background: #fff8e1; border: 1px solid #ffe0b2;
+            padding: 15px; border-radius: 8px; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .cost-val { font-size: 1.4rem; font-weight: 800; color: var(--primary-color); }
+
+        /* Modal */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s;
+        }
+        .modal.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: var(--white); width: 800px; max-width: 95%;
+            border-radius: 12px; padding: 0; position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-height: 90vh; display: flex; flex-direction: column;
+        }
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 12px 12px; display: flex; justify-content: flex-end; gap: 10px;}
+
+        /* Views */
+        .view-section { display: none; animation: fadeIn 0.3s ease-out; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .mobile-toggle { display: none; font-size: 1.5rem; cursor: pointer; color: var(--text-color); }
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); transition: 0.3s; }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .mobile-toggle { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="brand">
+            <i class="fas fa-drumstick-bite"></i>
+            <span>Crispy Sys</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="switchView('dashboard')">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </li>
+            <li class="nav-item" onclick="switchView('meals')">
+                <i class="fas fa-utensils"></i> Recipes (210)
+            </li>
+            <li class="nav-item" onclick="switchView('ingredients')">
+                <i class="fas fa-carrot"></i> Raw Materials
+            </li>
+            <li class="nav-item" onclick="switchView('packaging')">
+                <i class="fas fa-box-open"></i> Packaging
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <i class="fas fa-bars mobile-toggle" onclick="toggleSidebar()"></i>
+                <h1 id="page-title">Dashboard</h1>
+            </div>
+        </header>
+
+        <!-- Dashboard View -->
+        <section id="dashboard" class="view-section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info"><h3 id="stat-recipes">0</h3><p>Total Recipes</p></div>
+                    <i class="fas fa-hamburger stat-icon" style="color:var(--primary-color)"></i>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><h3 id="stat-raw">0</h3><p>Raw Materials</p></div>
+                    <i class="fas fa-carrot stat-icon" style="color:var(--success)"></i>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><h3 id="stat-pkg">0</h3><p>Packaging Items</p></div>
+                    <i class="fas fa-box-open stat-icon" style="color:var(--purple)"></i>
+                </div>
+            </div>
+            <div class="card">
+                <h3>System Overview</h3>
+                <p style="color: #666; margin-top: 10px; line-height: 1.6;">
+                    Welcome to the Recipe Management System. You can edit the cost of Raw Materials and Packaging items directly in their tables. 
+                    The system will automatically update the recipe costs across the entire menu of 210 items.
+                </p>
+            </div>
+        </section>
+
+        <!-- Meals View -->
+        <section id="meals" class="view-section">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <input type="text" id="meal-search" placeholder="Search 210 recipes..." style="max-width: 300px;" onkeyup="renderMeals()">
+                    <button class="btn btn-primary" onclick="openMealModal()">
+                        <i class="fas fa-plus"></i> New Recipe
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="meals-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Sell Price</th>
+                                <th>Total Cost</th>
+                                <th>Margin</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Raw Materials View -->
+        <section id="ingredients" class="view-section">
+            <div class="card">
+                <div style="margin-bottom: 15px;">
+                    <h3>Raw Materials (R-Items)</h3>
+                    <small style="color: #777">Edit the cost below to update all recipes instantly.</small>
+                </div>
+                <div class="table-container">
+                    <table id="ingredients-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>UOM</th>
+                                <th>Avg. Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Packaging View -->
+        <section id="packaging" class="view-section">
+            <div class="card">
+                <div style="margin-bottom: 15px;">
+                    <h3>Standard Packaging (P-Items)</h3>
+                    <small style="color: #777">20 Standard Items. Edit Cost to update recipes.</small>
+                </div>
+                <div class="table-container">
+                    <table id="packaging-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>UOM</th>
+                                <th>Avg. Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Recipe Builder Modal -->
+    <div class="modal" id="meal-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Recipe Builder</h2>
+                <i class="fas fa-times close-modal" style="cursor:pointer" onclick="closeModal('meal-modal')"></i>
+            </div>
+            <div class="modal-body">
+                <form id="meal-form">
+                    <input type="hidden" id="meal-id">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label>Code</label>
+                            <input type="text" id="meal-code">
+                        </div>
+                        <div class="form-group">
+                            <label>Selling Price</label>
+                            <input type="number" step="0.01" id="meal-price">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input type="text" id="meal-name">
+                    </div>
+
+                    <!-- Ingredients Section -->
+                    <div class="builder-section">
+                        <div class="builder-title">
+                            <span><i class="fas fa-carrot"></i> Raw Ingredients</span>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="addIngRow('ing')">Add</button>
+                        </div>
+                        <div id="meal-ingredients-list"></div>
+                    </div>
+
+                    <!-- Packaging Section -->
+                    <div class="builder-section">
+                        <div class="builder-title">
+                            <span><i class="fas fa-box-open"></i> Packaging Items</span>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="addIngRow('pkg')">Add</button>
+                        </div>
+                        <div id="meal-packaging-list"></div>
+                    </div>
+
+                    <div class="cost-summary">
+                        <span>Total Cost (Ingredients + Packaging):</span>
+                        <span class="cost-val" id="live-cost">0.00</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('meal-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMeal()">Save Recipe</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ---
+        
+        // 1. Raw Materials (R01 - R34)
+        let rawMaterials = [
+            { id: 1, code: "R01", name: "Chicken", uom: "PCS", category: "Chicken", cost: 5 },
+            { id: 2, code: "R02", name: "Strips", uom: "PCS", category: "Chicken", cost: 18 },
+            { id: 3, code: "R03", name: "Beef Burger", uom: "PCS", category: "Frozen", cost: 8 },
+            { id: 4, code: "R04", name: "Beef Burger 125g", uom: "PCS", category: "Frozen", cost: 6 },
+            { id: 5, code: "R05", name: "Chicken Burger", uom: "PCS", category: "Frozen", cost: 7 },
+            { id: 6, code: "R06", name: "Zinger", uom: "PCS", category: "Salad", cost: 9 },
+            { id: 7, code: "R07", name: "Fries", uom: "KG", category: "Frozen", cost: 5 },
+            { id: 8, code: "R08", name: "Cheese (Cheddar Slices)", uom: "PCS", category: "Addon", cost: 12 },
+            { id: 9, code: "R09", name: "Garlic Sauce", uom: "KG", category: "Bakery", cost: 4 },
+            { id: 10, code: "R10", name: "Small Coleslaw", uom: "PCS", category: "Addon", cost: 3 },
+            { id: 11, code: "R11", name: "Large Coleslaw", uom: "PCS", category: "Dry Food", cost: 5 },
+            { id: 12, code: "R12", name: "Dynamite Sauce", uom: "KG", category: "Sauce", cost: 6 },
+            { id: 13, code: "R13", name: "PIP Pepsi", uom: "PCS", category: "Beverage", cost: 8 },
+            { id: 14, code: "R14", name: "Pepsi 1.L", uom: "PCS", category: "Beverage", cost: 4 },
+            { id: 15, code: "R15", name: "Large Juice", uom: "PCS", category: "Beverage", cost: 6 },
+            { id: 16, code: "R16", name: "Small Water", uom: "PCS", category: "Beverage", cost: 2 },
+            { id: 17, code: "R17", name: "Burger Bun 4\"", uom: "PCS", category: "Bakery", cost: 1 },
+            { id: 18, code: "R18", name: "Tortilla Wrap", uom: "PCS", category: "Bakery", cost: 2 },
+            { id: 19, code: "R19", name: "Burger Bun 4.5\"", uom: "PCS", category: "Bakery", cost: 1.5 },
+            { id: 20, code: "R20", name: "Burger Bun 6\"", uom: "PCS", category: "Bakery", cost: 2 },
+            { id: 21, code: "R21", name: "Semolina Bun 8\"", uom: "PCS", category: "Bakery", cost: 2.5 },
+            { id: 22, code: "R22", name: "Burger Bun 5\"", uom: "PCS", category: "Bakery", cost: 1.8 },
+            { id: 23, code: "R23", name: "Nuggets", uom: "PCS", category: "Frozen", cost: 10 },
+            { id: 24, code: "R24", name: "Small Juice", uom: "PCS", category: "Beverage", cost: 4 },
+            { id: 25, code: "R25", name: "Popcorn Chicken", uom: "PCS", category: "Frozen", cost: 12 },
+            { id: 26, code: "R26", name: "Shawarma", uom: "PCS", category: "Chicken", cost: 20 },
+            { id: 27, code: "R27", name: "Basmati Rice", uom: "KG", category: "Dry Food", cost: 8 },
+            { id: 28, code: "R28", name: "Kinza Cola", uom: "PCS", category: "Beverage", cost: 3 },
+            { id: 29, code: "R29", name: "Flour (for breading)", uom: "KG", category: "Dry Food", cost: 3 },
+            { id: 30, code: "R30", name: "Lettuce", uom: "PCS", category: "Salad", cost: 2 },
+            { id: 31, code: "R31", name: "Mayonnaise", uom: "KG", category: "Sauce", cost: 6 },
+            { id: 32, code: "R32", name: "Ketchup", uom: "PCS", category: "Sauce", cost: 5 },
+            { id: 33, code: "R33", name: "Shortening / Cooking Oil", uom: "KG", category: "CART", cost: 8 },
+            { id: 34, code: "R34", name: "Steak 100g", uom: "PCS", category: "Frozen", cost: 25 }
+        ];
+
+        // 2. Standard Packaging (P01 - P20)
+        let packagingItems = [
+            { id: 1, code: "P01", name: "Small Cup", uom: "PCS", category: "Cups", cost: 0.10 },
+            { id: 2, code: "P02", name: "Medium Cup", uom: "PCS", category: "Cups", cost: 0.15 },
+            { id: 3, code: "P03", name: "Large Cup", uom: "PCS", category: "Cups", cost: 0.20 },
+            { id: 4, code: "P04", name: "Cup Lids", uom: "PCS", category: "Cups", cost: 0.05 },
+            { id: 5, code: "P05", name: "Paper Bag Small", uom: "PCS", category: "Bags", cost: 0.10 },
+            { id: 6, code: "P06", name: "Paper Bag Medium", uom: "PCS", category: "Bags", cost: 0.15 },
+            { id: 7, code: "P07", name: "Paper Bag Large", uom: "PCS", category: "Bags", cost: 0.25 },
+            { id: 8, code: "P08", name: "Meal Box", uom: "PCS", category: "Boxes", cost: 0.40 },
+            { id: 9, code: "P09", name: "Bucket Box", uom: "PCS", category: "Boxes", cost: 0.60 },
+            { id: 10, code: "P10", name: "Tray", uom: "PCS", category: "Trays", cost: 0.10 },
+            { id: 11, code: "P11", name: "Napkin (Tissue)", uom: "PCS", category: "Napkins", cost: 0.02 },
+            { id: 12, code: "P12", name: "Straw", uom: "PCS", category: "Accessories", cost: 0.01 },
+            { id: 13, code: "P13", name: "Plastic Spoon", uom: "PCS", category: "Cutlery", cost: 0.03 },
+            { id: 14, code: "P14", name: "Plastic Fork", uom: "PCS", category: "Cutlery", cost: 0.03 },
+            { id: 15, code: "P15", name: "Plastic Knife", uom: "PCS", category: "Cutlery", cost: 0.03 },
+            { id: 16, code: "P16", name: "Sauce Cup", uom: "PCS", category: "Accessories", cost: 0.05 },
+            { id: 17, code: "P17", name: "Burger Wrapper", uom: "PCS", category: "Wrappers", cost: 0.05 },
+            { id: 18, code: "P18", name: "Cling Film", uom: "M", category: "Wrappers", cost: 0.05 },
+            { id: 19, code: "P19", name: "Aluminum Foil", uom: "M", category: "Wrappers", cost: 0.10 },
+            { id: 20, code: "P20", name: "Wet Wipe", uom: "PCS", category: "Napkins", cost: 0.02 }
+        ];
+
+        // 3. Recipe Data (ALL 210 ITEMS)
+        const recipeDataRaw = [
+            {code:"MI_01", name:"12 PCS PACKET MIX", uom:"12", price:53, ing:[12,0,5,3,3,0,0,0,3,0,0,3,0,0,0,0]},
+            {code:"MI_02", name:"16 PCS PACKET MIX", uom:"PCS", price:70, ing:[16,0,5,4,0,1,0,0,4,0,0,4,0,0,0,0]},
+            {code:"MI_03", name:"20 PCS PACKET MIX", uom:"PCS", price:85, ing:[20,0,5,5,0,1,0,0,5,0,0,5,0,0,0,0]},
+            {code:"MI_04", name:"4 pcs chicken MIX Meal @ 5 AED", uom:"PCS", price:5, ing:[4,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_05", name:"BUCKET MEAL MIX", uom:"PCS", price:55, ing:[8,8,5,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_06", name:"CHICKEN DAY MIX", uom:"PCS", price:20, ing:[8,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_07", name:"CHICKEN DAY MIX Noon", uom:"PCS", price:20, ing:[8,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_08", name:"Daily MIX Meal", uom:"PCS", price:16, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_09", name:"Daily MIX Meal Noon", uom:"PCS", price:16, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_10", name:"DAILY OFFER MIX Meal", uom:"PCS", price:33, ing:[8,0,2,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_11", name:"DAILY OFFER MIX Meal Noon", uom:"PCS", price:33, ing:[8,0,2,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_12", name:"ECONMY MEAL-MIX", uom:"PCS", price:128, ing:[20,0,5,5,0,1,0,2,9,0,0,5,0.06,0,1,0]},
+            {code:"MI_13", name:"Golden 4 meal mix", uom:"PCS", price:10, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_14", name:"IDEAL MEAL MIX", uom:"PCS", price:69, ing:[12,0,5,3,3,0,0,1,3,0,0,3,0,0,0,0]},
+            {code:"MI_15", name:"MEGA MEAL MIX", uom:"PCS", price:105, ing:[20,0,5,5,0,1,0,2,5,0,0,5,0,0,0,0]},
+            {code:"MI_16", name:"PKT STRIPS 20 MIX", uom:"PCS", price:60, ing:[0,20,5,4,0,1,0,1,4,0,0,4,0,0,0,0]},
+            {code:"MI_17", name:"QUICK MIX", uom:"PCS", price:10, ing:[3,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_18", name:"SPICIAL FAMILY MIX", uom:"PCS", price:89, ing:[16,0,5,4,0,1,0,2,4,0,0,4,0,0,0,0]},
+            {code:"MI_19", name:"STRIPS FAMILY - MIX", uom:"PCS", price:79, ing:[0,20,5,4,0,1,0,1,4,0,0,5,0,0,0,0]},
+            {code:"MI_20", name:"SUPER MEAL - MIX", uom:"PCS", price:47, ing:[8,0,2,2,2,0,0,1,2,0,0,2,0,0,0,0]},
+            {code:"MI_21", name:"Ultimate M Careem Offers", uom:"PCS", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0]},
+            {code:"MI_22", name:"ULTIMATE MIX", uom:"PCS", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0]},
+            {code:"MI_23", name:"Ultimate M Noon Offers", uom:"PCS", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0]},
+            {code:"MI_24", name:"EXTRA CHEESE", uom:"PCS", price:1, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_25", name:"1/2 CHICKEN Original", uom:"PCS", price:24, ing:[4,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_26", name:"12 PCS PACKET Original", uom:"PCS", price:53, ing:[12,0,5,3,3,0,0,0,3,0,0,3,0,0,0,0]},
+            {code:"MI_27", name:"16 PCS PACKET Original", uom:"PCS", price:70, ing:[16,0,5,4,0,1,0,0,4,0,0,4,0,0,0,0]},
+            {code:"MI_28", name:"20 PCS PACKET Original", uom:"PCS", price:85, ing:[20,0,5,5,0,1,0,0,5,0,0,5,0,0,0,0]},
+            {code:"MI_29", name:"4 pcs chicken Original Meal @ 5", uom:"PCS", price:5, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_30", name:"BUCKET MEAL Original", uom:"PCS", price:55, ing:[8,8,5,2,0,0,0,1,0,0,0,0,3,0,0,0]},
+            {code:"MI_31", name:"CHICKEN DAY Original", uom:"PCS", price:20, ing:[8,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_32", name:"CHICKEN DAY Original Noon", uom:"PCS", price:20, ing:[8,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_33", name:"CHICKEN STRIPS Original", uom:"PCS", price:10, ing:[0,5,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_34", name:"DAILY OFFER Original Mea", uom:"PCS", price:33, ing:[8,0,2,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_35", name:"DAILY OFFER Original Meal Noon", uom:"PCS", price:33, ing:[8,0,2,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_36", name:"Daily Original Meal", uom:"PCS", price:16, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_37", name:"Daily Original Meal Noon", uom:"PCS", price:16, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_38", name:"DEAL FOR ONE ( TWIST BOX ) Orig", uom:"PCS", price:17, ing:[2,2,1,0,0,0,0,1,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_39", name:"ECONMY MEAL Original", uom:"PCS", price:128, ing:[20,0,5,5,0,10,0,2,9,0,0,5,0.06,0,1,0]},
+            {code:"MI_40", name:"Golden 4 meal Normal", uom:"PCS", price:10, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_41", name:"IDEAL MEAL Original", uom:"PCS", price:69, ing:[12,0,5,3,3,0,0,1,3,0,0,3,0,0,0,0]},
+            {code:"MI_42", name:"MEGA MEAL Original", uom:"PCS", price:105, ing:[20,0,5,5,0,1,0,2,5,0,0,5,0,0,0,0]},
+            {code:"MI_43", name:"NORMAL PCS", uom:"PCS", price:5, ing:[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_44", name:"Offersn Mix meal @ 9 AED", uom:"PCS", price:9, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_45", name:"Offers Original meal @ 9 AED", uom:"PCS", price:9, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_46", name:"Offers Spicy meal @ 9 AED", uom:"", price:9, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_47", name:"PKT STRIPS 20 Original", uom:"", price:60, ing:[0,20,5,4,0,1,0,0,4,0,0,5,0,0,0,0]},
+            {code:"MI_48", name:"QUICK NORMAL", uom:"", price:10, ing:[3,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_49", name:"QUICK NORMAL Employees", uom:"", price:10, ing:[3,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_50", name:"QUICK NORMAL Maintenanc", uom:"", price:10, ing:[3,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_51", name:"SAVING MEAL Original", uom:"", price:24, ing:[3,0,1,1,1,0,1,0,1,0,0,2,0,0,0,0]},
+            {code:"MI_52", name:"SPICIAL FAMILY Original", uom:"", price:89, ing:[4,0,5,4,0,1,0,2,4,0,0,4,0,0,0,0]},
+            {code:"MI_53", name:"Steak Combo", uom:"", price:20, ing:[0,0,1,0,0,0,0,1,0,0,0,0,1,0,1,0]},
+            {code:"MI_54", name:"STRIPS FAMILY Original", uom:"", price:79, ing:[0,20,5,4,0,1,0,1,4,0,0,5,0,0,0,0]},
+            {code:"MI_55", name:"SUPER MEAL Original", uom:"", price:47, ing:[8,0,2,2,2,0,0,1,2,0,0,2,0,0,0,0]},
+            {code:"MI_56", name:"TWIST BOX Original", uom:"", price:17, ing:[2,2,1,1,0,0,0,1,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_57", name:"Ultimate O Careem Offers", uom:"", price:30, ing:[2,0,0,3,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_58", name:"Ultimate O Noon Offers", uom:"", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_59", name:"ULTIMATE Original", uom:"", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_60", name:"1/2 CHICKEN Spicy", uom:"", price:24, ing:[4,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_61", name:"12 PCS PACKET Spicy", uom:"", price:53, ing:[12,0,5,3,3,0,0,0,3,0,0,3,0,0,0,0]},
+            {code:"MI_62", name:"16 PCS PACKET Spicy", uom:"", price:70, ing:[16,0,5,4,0,1,0,0,4,0,0,4,0,0,0,0]},
+            {code:"MI_63", name:"20 PCS PACKET Spicy", uom:"", price:85, ing:[20,0,5,5,0,1,0,0,5,0,0,5,0,0,0,0]},
+            {code:"MI_64", name:"4 pcs chicken Spicy Meal@ 5 AED", uom:"", price:5, ing:[14,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_65", name:"BUCKET MEAL Spicy", uom:"", price:55, ing:[8,8,5,2,0,0,0,1,0,0,0,0,3,0,0,0]},
+            {code:"MI_66", name:"CHICKEN DAY SPICY", uom:"", price:20, ing:[8,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_67", name:"CHICKEN DAY SPICY Noon", uom:"", price:20, ing:[8,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_68", name:"Crispy Strips Spicy Meal", uom:"", price:22, ing:[0,5,1,1,0,0,0,0,1,0,0,0,2,0,0,0]},
+            {code:"MI_69", name:"DAILY OFFER Spicy Meal", uom:"", price:33, ing:[8,0,2,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_70", name:"DAILY OFFER Spicy Meal Noon", uom:"", price:33, ing:[8,0,2,2,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_71", name:"Daily Spicy Meal", uom:"", price:16, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_72", name:"Daily Spicy Meal Noon", uom:"", price:16, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_73", name:"DEAL FOR ONE ( TWIST BOX ) SPIC", uom:"", price:17, ing:[2,2,1,0,0,0,0,1,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_74", name:"ECONMY MEAL Spicy", uom:"", price:128, ing:[20,0,5,5,0,1,0,2,9,0,0,5,0.06,0,1,0]},
+            {code:"MI_75", name:"Golden 4 meal Spicy", uom:"", price:10, ing:[4,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0]},
+            {code:"MI_76", name:"IDEAL MEAL Spicy", uom:"", price:69, ing:[12,0,5,3,3,0,0,1,3,0,0,3,0,0,0,0]},
+            {code:"MI_77", name:"MEGA MEAL Spicy", uom:"", price:105, ing:[20,0,5,5,0,1,0,2,5,0,0,5,0,0,0,0]},
+            {code:"MI_78", name:"PKT STRIPS 20 Spicy", uom:"", price:60, ing:[0,20,5,4,0,1,0,0,4,0,0,5,0,0,0,0]},
+            {code:"MI_79", name:"QUICK SPICY", uom:"", price:10, ing:[3,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_80", name:"QUICK Spicy Employees", uom:"", price:10, ing:[3,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_81", name:"QUICK Spicy Maintenanc", uom:"", price:10, ing:[3,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_82", name:"Ramadan individual Spicy", uom:"", price:15, ing:[3,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_83", name:"SAVING MEAL Spicy", uom:"", price:24, ing:[4,0,1,1,1,0,1,0,1,0,0,2,0,0,0,0]},
+            {code:"MI_84", name:"SPICIAL FAMILY Spicy", uom:"", price:89, ing:[16,0,5,4,0,1,0,2,4,0,0,4,0,0,0,0]},
+            {code:"MI_85", name:"SPICY PCS", uom:"", price:5, ing:[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_86", name:"STRIPS FAMILY Spicy", uom:"", price:79, ing:[0,20,5,4,0,1,0,1,4,0,0,5,0,0,0,0]},
+            {code:"MI_87", name:"SUPER MEAL Spicy", uom:"", price:47, ing:[8,0,2,2,2,0,0,1,2,0,0,2,0,0,0,0]},
+            {code:"MI_88", name:"TWIST BOX SPICY", uom:"", price:17, ing:[2,2,1,0,0,0,0,1,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_89", name:"Ultimate S Careem Offers", uom:"", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0]},
+            {code:"MI_90", name:"Ultimate S Noon Offers", uom:"", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0]},
+            {code:"MI_91", name:"ULTIMATE Spicy", uom:"", price:30, ing:[12,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0]},
+            {code:"MI_92", name:"BEEF BURGER COMBO", uom:"", price:12, ing:[0,0,1,0,0,0,0,1,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_93", name:"BUFFALO MEAL", uom:"", price:15, ing:[0,20,1,0,0,0,0,1,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_94", name:"CHICKEN BUEGER COMBO", uom:"", price:12, ing:[0,0,1,0,0,0,0,1,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_95", name:"DYNAMITE OR COMBO", uom:"", price:13, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_96", name:"DYNAMITE SPY COMBO", uom:"", price:13, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_97", name:"FAJITA COMBO", uom:"", price:13, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_98", name:"FAJITA Spicy COMBO", uom:"", price:13, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_99", name:"MAXI CHICKEN DOUBLE COMB", uom:"", price:20, ing:[0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_100", name:"MAXI CHICKEN SINGLE COMB", uom:"", price:15, ing:[0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_101", name:"SUPER CRUNCHY OR COMBO", uom:"", price:12, ing:[0,2,1,0,0,0,0,1,0,1,0,0,1,0,0,0]},
+            {code:"MI_102", name:"SUPER CRUNCHY SP COMBO", uom:"", price:12, ing:[0,2,1,0,0,0,0,1,0,1,0,0,1,0,0,0]},
+            {code:"MI_103", name:"SUPREM OR COMBO", uom:"", price:12, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_104", name:"SUPREM SP COMBO", uom:"", price:12, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_105", name:"TORNADO OR COMBO", uom:"", price:14, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_106", name:"TORNADO SP COMBO", uom:"", price:14, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_107", name:"TWIN BEEF BURGER", uom:"", price:19, ing:[0,0,1,0,0,0,0,1,0,2,0,0,1,0.03,0,0]},
+            {code:"MI_108", name:"Twin Chicken Burger", uom:"", price:19, ing:[0,0,1,0,0,0,0,1,0,2,0,0,1,0.03,0,0]},
+            {code:"MI_109", name:"TWIN SHAWARMA MEAL", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_110", name:"Twin Supreme Meal", uom:"", price:18, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_111", name:"Twin SUPREM MIX", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_112", name:"Twin Suprem Spicy", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_113", name:"Twin Twist MIX", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_114", name:"Twin Twist MIX Noon", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_115", name:"Twin Twist Original", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_116", name:"Twin Twist Original Noon", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_117", name:"Twin Twist Spicy", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_118", name:"Twin Twist Spicy Noon", uom:"", price:18, ing:[0,4,1,0,0,0,0,1,0,0,0,0,1,0.03,0,0]},
+            {code:"MI_119", name:"TWIST OR COMBO", uom:"", price:12, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_120", name:"TWIST SP COMBO", uom:"", price:12, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_121", name:"TWIST SP COMBO employees", uom:"", price:12, ing:[0,2,1,0,0,0,0,1,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_122", name:"Volcano Combo Double", uom:"", price:22, ing:[0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_123", name:"Volcano Combo Single", uom:"", price:18, ing:[0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_124", name:"GO JUICE", uom:"", price:3, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_125", name:"GO FAMILY KANZA .", uom:"", price:3, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_126", name:"GO KANZA .", uom:"", price:3, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_127", name:"Go Large", uom:"", price:4, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_128", name:"GO Shani.", uom:"", price:3, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_129", name:"GO WATER.", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_130", name:"Upsize Large Fries And Large Pep", uom:"", price:4, ing:[0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_131", name:"KIDS MEAL CRISPY", uom:"", price:15, ing:[0,3,1,0,0,0,0,0,0,0,0,0,1,0,0,1]},
+            {code:"MI_132", name:"KIDS MEAL NUGGETS", uom:"", price:15, ing:[0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,1]},
+            {code:"MI_133", name:"KIDS MEAL POP CORN", uom:"", price:15, ing:[0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,1]},
+            {code:"MI_134", name:"BEEF BURGER SANDWICH", uom:"", price:7, ing:[0,0,0,0,0,0,0,0,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_135", name:"BUFFALO SANDWICH", uom:"", price:10, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_136", name:"CHICKEN BURGER SANDWICH", uom:"", price:7, ing:[0,0,0,0,0,0,0,0,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_137", name:"DYNAMITE Origina SANDW", uom:"", price:8, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_138", name:"DYNAMITE Origina SANDWICHES", uom:"", price:8, ing:[0,22,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_139", name:"FAJITA SANDWICHES", uom:"", price:8, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_140", name:"FAJITA Spicy SANDWICHES", uom:"", price:8, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_141", name:"MAX DOUBLE SANDWICH", uom:"", price:15, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_142", name:"MAX SINGLE SANDWICH", uom:"", price:10, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_143", name:"SHAWARMA Origina SANDWIC", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_144", name:"SHAWARMA Spicy SANDWICH", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_145", name:"Steak Sandwich", uom:"", price:15, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0]},
+            {code:"MI_146", name:"SUPER CRUNCHY OR SANDWIC", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_147", name:"SUPER CRUNCHY SP SANDWICHES", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_148", name:"SUPREME Origina SANDWIC", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_149", name:"SUPREME Spicy SANDWICH", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_150", name:"TORNADO Origina SANDWI", uom:"", price:9, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_151", name:"TORNADO Spicy SANDWICHE", uom:"", price:9, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_152", name:"TWIST Origina SANDWISHES", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_153", name:"TWIST Spicy SANDWISHES", uom:"", price:7, ing:[0,2,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_154", name:"Volcano Sandwich Double", uom:"", price:17, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_155", name:"Volcano Sandwich Single", uom:"", price:13, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0.015,0,0]},
+            {code:"MI_156", name:"6 PCS NUGGETS", uom:"", price:8, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_157", name:"Big Coleslaw", uom:"", price:7, ing:[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_158", name:"BUN", uom:"", price:1, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_159", name:"Cheese", uom:"", price:1, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_160", name:"CHILI CHEESE NUGGETS", uom:"", price:10, ing:[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_161", name:"CRISPY LARGE Original", uom:"", price:10, ing:[0,5,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_162", name:"CRISPY LARGE Spicy", uom:"", price:10, ing:[0,5,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_163", name:"CRISPY RICE", uom:"", price:10, ing:[0,2,0,0,0,0,0,0,0,0,0,1,1,0,0,0]},
+            {code:"MI_164", name:"CRISPY SMALL Original", uom:"", price:10, ing:[0,5,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_165", name:"CRISPY SMALL Spicy", uom:"", price:7, ing:[0,3,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_166", name:"DYNAMITE SAUCE", uom:"", price:1, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_167", name:"FRENCH FRIES-BOX", uom:"", price:10, ing:[0,0,5,0,0,0,0,0,0,0,0,0,2,0,0,0]},
+            {code:"MI_168", name:"FRENCH FRIES- LARGE", uom:"", price:4, ing:[0,0,4,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+            {code:"MI_169", name:"FRENCH FRIES SMALL", uom:"", price:2, ing:[0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_170", name:"GARLIC - SMALL", uom:"", price:1, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_171", name:"GRAVEY SAUCE", uom:"", price:1, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_172", name:"HOT CHEDAR CHEESE", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_173", name:"LARGE POP CORN", uom:"", price:14, ing:[0,0,0,0,0,0,0,0,28,0,0,1,0,0,0]},
+            {code:"MI_174", name:"Small Coleslaw", uom:"", price:3, ing:[0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_175", name:"SMALL POP CORN", uom:"", price:8, ing:[0,0,0,0,0,0,0,0,14,0,0,1,0,0,0]},
+            {code:"MI_176", name:"SPICED RICE", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_177", name:"Spicy - FRIES", uom:"", price:1, ing:[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0]},
+            {code:"MI_178", name:"WHITE RICE", uom:"", price:4, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_179", name:"Crispy Snack Original Me", uom:"", price:15, ing:[1,3,1,0,0,0,0,1,0,1,0,0,1,0,0,0]},
+            {code:"MI_180", name:"Crispy Snack Spicy Meal", uom:"", price:15, ing:[1,3,1,0,0,0,0,1,0,1,0,0,1,0,0,0]},
+            {code:"MI_181", name:"RICE MEAL Original", uom:"", price:15, ing:[2,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0]},
+            {code:"MI_182", name:"RICE MEAL Original employees", uom:"", price:15, ing:[2,0,0,0,0,0,0,1,0,0,0,1,1,0,0,0]},
+            {code:"MI_183", name:"RICE MEAL Spicy", uom:"", price:15, ing:[2,0,0,0,0,0,0,1,0,0,0,1,1,0,0,0]},
+            {code:"MI_184", name:"SNACK BOX Original", uom:"", price:15, ing:[2,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0]},
+            {code:"MI_185", name:"SNACK BOX Spicy", uom:"", price:15, ing:[2,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0]},
+            {code:"MI_186", name:"SNACK SANDWICH Original", uom:"", price:15, ing:[1,2,1,0,0,0,0,1,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_187", name:"SNACK SANDWICH Spicy", uom:"", price:15, ing:[1,2,1,0,0,0,0,1,0,1,0,0,1,0.015,0,0]},
+            {code:"MI_188", name:"7UP M", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_189", name:"7UP S", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_190", name:"DIET PEPSI M", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_191", name:"DIET PEPSI S", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_192", name:"JUCE LAKNOR LARGE", uom:"", price:9, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_193", name:"KANZA", uom:"", price:3, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_194", name:"LARGE 7 UP", uom:"", price:6, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_195", name:"LARGE DEW", uom:"", price:6, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_196", name:"LARGE MIRINDA", uom:"", price:6, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_197", name:"LARGE PEPSI", uom:"", price:6, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_198", name:"LITER 7UP", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]},
+            {code:"MI_199", name:"LITER MIRINDA", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]},
+            {code:"MI_200", name:"LITER Mountain Dew", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]},
+            {code:"MI_201", name:"LITER PEPSI", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]},
+            {code:"MI_202", name:"M.WATER 500ML", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_203", name:"MIRINDA M", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_204", name:"MIRINDA S", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_205", name:"Mountain Dew M", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_206", name:"Mountain Dew S", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_207", name:"PEPSI M", uom:"", price:5, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_208", name:"PEPSI S", uom:"", price:2, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_209", name:"Shani Can", uom:"", price:3, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+            {code:"MI_210", name:"SMALL JUICE", uom:"", price:3, ing:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
+        ];
+
+        // Convert raw recipe data to App State
+        let appMeals = recipeDataRaw.map((r, index) => {
+            const ingredients = [];
+            // Map ing array indices (0-15) to rawMaterials IDs (1-16)
+            for(let i=0; i<16; i++) {
+                if(r.ing[i] && r.ing[i] > 0) {
+                    ingredients.push({ id: i+1, qty: r.ing[i] });
+                }
+            }
+            return {
+                dbId: index,
+                code: r.code,
+                name: r.name,
+                uom: r.uom,
+                sellingPrice: parseFloat(r.price),
+                ingredients: ingredients,
+                packaging: [], // Empty initially for existing items
+                calculatedCost: 0
+            };
+        });
+
+        // --- CORE FUNCTIONS ---
+
+        function calculateAllCosts() {
+            appMeals.forEach(meal => {
+                let total = 0;
+                // Ingredients
+                meal.ingredients.forEach(ing => {
+                    const mat = rawMaterials.find(m => m.id === ing.id);
+                    if(mat) total += mat.cost * ing.qty;
+                });
+                // Packaging
+                meal.packaging.forEach(pkg => {
+                    const item = packagingItems.find(p => p.id === pkg.id);
+                    if(item) total += item.cost * pkg.qty;
+                });
+                meal.calculatedCost = total;
+            });
+        }
+
+        function updateMaterialCost(type, id, newCost) {
+            const val = parseFloat(newCost);
+            if(isNaN(val)) return;
+
+            if(type === 'raw') {
+                const mat = rawMaterials.find(m => m.id === id);
+                if(mat) mat.cost = val;
+            } else if (type === 'pkg') {
+                const pkg = packagingItems.find(p => p.id === id);
+                if(pkg) pkg.cost = val;
+            }
+            
+            calculateAllCosts();
+            renderDashboard();
+            renderMeals();
+            renderIngredients();
+            renderPackaging();
+        }
+
+        // --- INIT & RENDER ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateAllCosts();
+            renderDashboard();
+            renderIngredients();
+            renderPackaging();
+            renderMeals();
+        });
+
+        function switchView(viewId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(viewId === 'dashboard') document.querySelectorAll('.nav-item')[0].classList.add('active');
+            if(viewId === 'meals') document.querySelectorAll('.nav-item')[1].classList.add('active');
+            if(viewId === 'ingredients') document.querySelectorAll('.nav-item')[2].classList.add('active');
+            if(viewId === 'packaging') document.querySelectorAll('.nav-item')[3].classList.add('active');
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            document.getElementById('sidebar').classList.remove('mobile-open');
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('mobile-open'); }
+
+        function renderDashboard() {
+            document.getElementById('stat-recipes').innerText = appMeals.length;
+            document.getElementById('stat-raw').innerText = rawMaterials.length;
+            document.getElementById('stat-pkg').innerText = packagingItems.length;
+        }
+
+        function renderIngredients() {
+            const tbody = document.querySelector('#ingredients-table tbody');
+            tbody.innerHTML = '';
+            rawMaterials.forEach(m => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${m.code}</b></td>
+                        <td>${m.name}</td>
+                        <td><span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.75rem">${m.category}</span></td>
+                        <td>${m.uom}</td>
+                        <td>
+                            <input type="number" step="0.01" class="cost-input" value="${m.cost.toFixed(2)}"
+                            onchange="updateMaterialCost('raw', ${m.id}, this.value)">
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function renderPackaging() {
+            const tbody = document.querySelector('#packaging-table tbody');
+            tbody.innerHTML = '';
+            packagingItems.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${p.code}</b></td>
+                        <td>${p.name}</td>
+                        <td><span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.75rem; color:var(--purple)">${p.category}</span></td>
+                        <td>${p.uom}</td>
+                        <td>
+                            <input type="number" step="0.01" class="cost-input" value="${p.cost.toFixed(2)}"
+                            onchange="updateMaterialCost('pkg', ${p.id}, this.value)">
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function renderMeals() {
+            const tbody = document.querySelector('#meals-table tbody');
+            const query = document.getElementById('meal-search').value.toLowerCase();
+            tbody.innerHTML = '';
+            
+            appMeals.forEach((meal, idx) => {
+                if(meal.name.toLowerCase().includes(query) || meal.code.toLowerCase().includes(query)) {
+                    const margin = meal.sellingPrice - meal.calculatedCost;
+                    const marginClass = margin >= 0 ? 'profit-pos' : 'profit-neg';
+                    
+                    tbody.innerHTML += `
+                    <tr>
+                        <td><b>${meal.code}</b></td>
+                        <td>${meal.name}</td>
+                        <td>${meal.sellingPrice.toFixed(2)}</td>
+                        <td>${meal.calculatedCost.toFixed(2)}</td>
+                        <td class="${marginClass}">${margin.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-outline btn-sm" onclick="openMealModal(${idx})"><i class="fas fa-edit"></i></button>
+                        </td>
+                    </tr>`;
+                }
+            });
+        }
+
+        // --- RECIPE BUILDER MODAL ---
+
+        function openMealModal(index = null) {
+            const modal = document.getElementById('meal-modal');
+            document.getElementById('meal-ingredients-list').innerHTML = '';
+            document.getElementById('meal-packaging-list').innerHTML = '';
+
+            if(index !== null) {
+                const m = appMeals[index];
+                document.getElementById('meal-id').value = index;
+                document.getElementById('modal-title').innerText = "Edit: " + m.code;
+                document.getElementById('meal-code').value = m.code;
+                document.getElementById('meal-code').disabled = true;
+                document.getElementById('meal-name').value = m.name;
+                document.getElementById('meal-price').value = m.sellingPrice;
+
+                m.ingredients.forEach(i => addIngRow('ing', i.id, i.qty));
+                m.packaging.forEach(p => addIngRow('pkg', p.id, p.qty));
+            } else {
+                document.getElementById('meal-id').value = -1;
+                document.getElementById('modal-title').innerText = "New Recipe";
+                document.getElementById('meal-form').reset();
+                document.getElementById('meal-code').disabled = false;
+                addIngRow('ing'); // Default empty row
+            }
+            updateModalCost();
+            modal.classList.add('active');
+        }
+
+        function addIngRow(type, id='', qty='') {
+            const listId = type === 'ing' ? 'meal-ingredients-list' : 'meal-packaging-list';
+            const sourceArr = type === 'ing' ? rawMaterials : packagingItems;
+            const container = document.getElementById(listId);
+            const div = document.createElement('div');
+            div.className = 'ing-row';
+            
+            let options = `<option value="">Select Item...</option>`;
+            sourceArr.forEach(item => {
+                const selected = item.id == id ? 'selected' : '';
+                options += `<option value="${item.id}" ${selected}>${item.code} - ${item.name} (${item.cost})</option>`;
+            });
+
+            div.innerHTML = `
+                <select class="ing-select" onchange="updateModalCost()">${options}</select>
+                <input type="number" step="0.01" class="ing-qty" placeholder="Qty" value="${qty}" oninput="updateModalCost()">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); updateModalCost()"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function updateModalCost() {
+            let total = 0;
+            
+            document.querySelectorAll('#meal-ingredients-list .ing-row').forEach(row => {
+                const id = parseInt(row.querySelector('.ing-select').value);
+                const qty = parseFloat(row.querySelector('.ing-qty').value || 0);
+                const mat = rawMaterials.find(m => m.id === id);
+                if(mat && qty) total += mat.cost * qty;
+            });
+
+            document.querySelectorAll('#meal-packaging-list .ing-row').forEach(row => {
+                const id = parseInt(row.querySelector('.ing-select').value);
+                const qty = parseFloat(row.querySelector('.ing-qty').value || 0);
+                const pkg = packagingItems.find(p => p.id === id);
+                if(pkg && qty) total += pkg.cost * qty;
+            });
+
+            document.getElementById('live-cost').innerText = total.toFixed(2);
+            return total;
+        }
+
+        function saveMeal() {
+            const idx = parseInt(document.getElementById('meal-id').value);
+            const code = document.getElementById('meal-code').value;
+            const name = document.getElementById('meal-name').value;
+            const price = parseFloat(document.getElementById('meal-price').value) || 0;
+
+            if(!code || !name) { alert("Code and Name required"); return; }
+
+            const ingList = [];
+            document.querySelectorAll('#meal-ingredients-list .ing-row').forEach(row => {
+                const id = parseInt(row.querySelector('.ing-select').value);
+                const qty = parseFloat(row.querySelector('.ing-qty').value || 0);
+                if(id && qty) ingList.push({id, qty});
+            });
+
+            const pkgList = [];
+            document.querySelectorAll('#meal-packaging-list .ing-row').forEach(row => {
+                const id = parseInt(row.querySelector('.ing-select').value);
+                const qty = parseFloat(row.querySelector('.ing-qty').value || 0);
+                if(id && qty) pkgList.push({id, qty});
+            });
+
+            const mealObj = {
+                dbId: idx === -1 ? appMeals.length : appMeals[idx].dbId,
+                code, name, uom: "PCS", sellingPrice: price,
+                ingredients: ingList,
+                packaging: pkgList,
+                calculatedCost: updateModalCost()
+            };
+
+            if(idx === -1) appMeals.push(mealObj);
+            else appMeals[idx] = mealObj;
+
+            closeModal('meal-modal');
+            renderMeals();
+            renderDashboard();
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    </script>
+</body>
+</html>
